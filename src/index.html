@@ -3,9 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ToDo App</title>
+  <title>Todo List</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app"></div>
+  <div class="container">
+    <div class="header">
+      <h1>Todo List</h1>
+    </div>
+    <div id="project-container" class="project-container"></div>
+    <div id="todo-app" class="todo-app"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div id="modal-content" class="modal-content">
+      <span class="close">&times;</span>
+    </div>
+  </div>
+
+  <script src="bundle.js"></script>
 </body>
 </html>

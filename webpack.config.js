@@ -24,6 +24,10 @@ module.exports = {
   mode: 'development',
   devtool: 'inline-source-map',
   devServer: {
-    static: './dist',
+    static: path.resolve(__dirname, 'dist'),
+    compress: true,
+    port: 9000,
+    hot: true,
+    open: true,
   },
 };
