@@ -20,12 +20,15 @@ class DOM {
       const projectItem = document.createElement('li');
       projectItem.textContent = project.name;
       projectItem.className = index === this.todoApp.currentProjectIndex ? 'active' : '';
+
       projectItem.onclick = () => {
         this.todoApp.setCurrentProject(index);
         this.render();
       };
+
       projectList.appendChild(projectItem);
     });
+
     this.projectContainer.appendChild(projectList);
 
     // Render todos of the current project
@@ -75,20 +78,35 @@ class DOM {
 
     // Add Todo Form
     this.renderAddTodoForm();
-
-    //delete project
-    
   }
 
   renderAddProjectForm() {
-    const addProjectButton = document.createElement('button');
-    addProjectButton.textContent = 'Add Project';
-    addProjectButton.onclick = () => {
-      this.openModal('Add Project', this.renderAddProjectFormModal());
-    };
+  const addProjectButton = document.createElement('button');
+  addProjectButton.textContent = 'Add Project';
+  addProjectButton.onclick = () => {
+    this.openModal('Add Project', this.renderAddProjectFormModal());
+  };
 
-    this.projectContainer.appendChild(addProjectButton);
-  }
+  const deleteProjectButton = document.createElement('button');
+  deleteProjectButton.textContent = 'Delete Project';
+  deleteProjectButton.onclick = () => {
+    const currentIndex = this.todoApp.currentProjectIndex;
+    if (currentIndex !== 0) { // Ensure "All" project cannot be deleted
+      this.todoApp.deleteProject(currentIndex);
+      this.render();
+    } else {
+      alert("Cannot delete 'All' project.");
+    }
+  };
+
+  const projectButtonsContainer = document.createElement('div');
+  projectButtonsContainer.classList.add('project-buttons');
+  projectButtonsContainer.appendChild(addProjectButton);
+  projectButtonsContainer.appendChild(deleteProjectButton);
+
+  this.projectContainer.appendChild(projectButtonsContainer);
+}
+
 
   renderAddProjectFormModal() {
     const modalContent = document.createElement('div');
@@ -171,7 +189,7 @@ class DOM {
     modalContent.appendChild(prioritySelect);
     modalContent.appendChild(notesInput);
     modalContent.appendChild(addButton);
-    
+
     return modalContent;
   }
 
@@ -276,13 +294,11 @@ class DOM {
     const modalTitle = document.createElement('h2');
     modalTitle.textContent = title;
     this.modalContent.appendChild(modalTitle);
-
     this.modalContent.appendChild(content);
   }
-
   closeModal() {
     this.modal.style.display = 'none';
-  }
-}
-
-export default DOM;
+    }
+    }
+    
+    export default DOM;

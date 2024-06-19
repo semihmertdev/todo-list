@@ -9,9 +9,7 @@ class Project {
   }
 
   deleteTodo(index) {
-    if (index >= 0 && index < this.todos.length) {
-      this.todos.splice(index, 1);
-    }
+    this.todos.splice(index, 1);
   }
 }
 

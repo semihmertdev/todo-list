@@ -169,7 +169,6 @@ body {
     box-shadow: none;
   }
 }
-
 /* Modal */
 .modal {
   display: none; /* Hidden by default */
@@ -310,4 +309,13 @@ textarea {
   .modal-content {
     width: 90%;
   }
+}
+/* styles.css */
+
+.project-buttons {
+  margin-top: 10px;
+}
+
+.project-buttons button {
+  margin-right: 10px;
 }
