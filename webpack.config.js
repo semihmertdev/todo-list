@@ -6,12 +6,21 @@ module.exports = {
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
-    clean: true,
   },
   module: {
     rules: [
       {
-        test: /\.css$/i,
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          },
+        },
+      },
+      {
+        test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
     ],
@@ -21,13 +30,11 @@ module.exports = {
       template: './src/index.html',
     }),
   ],
-  mode: 'development',
-  devtool: 'inline-source-map',
   devServer: {
-    static: path.resolve(__dirname, 'dist'),
-    compress: true,
-    port: 9000,
-    hot: true,
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
     open: true,
   },
+  mode: 'development',
 };
