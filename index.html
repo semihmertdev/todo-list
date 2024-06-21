@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <link rel="stylesheet" href="style.css">
+<script defer src="main.js"></script></head>
+<body>
+  <div class="container">
+    <div class="header">
+        <h1>Todo App</h1>
+    </div>
+    <div id="project-section">
+        <div class="add">
+      <h2>Projects</h2>
+      <button id="add-project">+</button>
+        </div>
+      <ul id="project-list"></ul>
+    </div>
+    <div id="todo-section">
+        <div class="todos">
+      <h2>Todos</h2>
+      <button id="show-form-btn">+</button>
+        </div>
+      <ul id="todo-list"></ul>
+      <form id="add-todo-form" class="hidden">
+        <label for="todo-title">Title:</label><br>
+        <input type="text" id="todo-title" name="todo-title" required><br>
+        <label for="todo-description">Description:</label><br>
+        <textarea id="todo-description" name="todo-description" rows="4" required></textarea><br>
+        <label for="todo-dueDate">Due Date:</label><br>
+        <input type="date" id="todo-dueDate" name="todo-dueDate" required><br>
+        <label for="todo-priority">Priority:</label><br>
+        <select id="todo-priority" name="todo-priority">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select><br>
+        <button type="submit">Add Todo</button>
+      </form>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
