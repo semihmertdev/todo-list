@@ -38,8 +38,11 @@ export default class Dom {
     if (title && description && dueDate) {
       if (this.currentEditTodoId !== null) {
         // Edit existing todo
-        this.app.editTodo(this.currentEditTodoId, title, description, dueDate, priority);
-        this.currentEditTodoId = null;
+        const todo = this.app.getTodoById(this.currentEditTodoId);
+        if (todo) {
+          this.app.editTodo(this.currentEditTodoId, title, description, dueDate, priority);
+          this.currentEditTodoId = null;
+        }
       } else {
         // Add new todo
         const tagName = this.app.currentProject ? this.app.currentProject.name : 'Default';
@@ -60,6 +63,21 @@ export default class Dom {
     document.getElementById('todo-dueDate').value = '';
     document.getElementById('todo-priority').value = 'Low';
     this.currentEditTodoId = null;
+  }
+
+  editProject(projectName) {
+    const newProjectName = prompt('Enter the new project name:');
+    if (newProjectName) {
+      this.app.editProject(projectName, newProjectName);
+      this.render();
+    }
+  }
+
+  deleteProject(projectName) {
+    if (confirm(`Are you sure you want to delete the project "${projectName}"?`)) {
+      this.app.deleteProject(projectName);
+      this.render();
+    }
   }
 
   editTodo(todoId) {
@@ -109,6 +127,27 @@ export default class Dom {
         li.textContent = projectName;
         li.classList.add('project-item'); // Add project-item class
         li.id = projectName.toLowerCase(); // Set id to lowercase project name
+
+        // Edit Button for Project
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.classList.add('edit-btn');
+        editButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.editProject(projectName);
+        });
+        li.appendChild(editButton);
+
+        // Delete Button for Project
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.classList.add('delete-btn');
+        deleteButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.deleteProject(projectName);
+        });
+        li.appendChild(deleteButton);
+
         li.addEventListener('click', () => {
           this.app.switchProject(projectName);
           this.render();
@@ -154,7 +193,7 @@ export default class Dom {
           break;
       }
 
-      // Add Edit Button
+      // Edit Button for Todo
       const editButton = document.createElement('button');
       editButton.textContent = 'Edit';
       editButton.classList.add('edit-btn');
@@ -164,7 +203,7 @@ export default class Dom {
       });
       li.appendChild(editButton);
 
-      // Add Delete Button
+      // Delete Button for Todo
       const deleteButton = document.createElement('button');
       deleteButton.textContent = 'Delete';
       deleteButton.classList.add('delete-btn');
