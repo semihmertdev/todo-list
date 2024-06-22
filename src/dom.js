@@ -1,15 +1,17 @@
 import TodoApp from './todoApp';
+import { format } from 'date-fns';
 
 export default class Dom {
   constructor() {
     this.app = new TodoApp();
+    this.currentEditTodoId = null;
     this.init();
   }
 
   init() {
     document.getElementById('add-project').addEventListener('click', () => this.addProject());
     document.getElementById('show-form-btn').addEventListener('click', () => this.toggleFormVisibility());
-    document.getElementById('add-todo-form').addEventListener('submit', (event) => this.addTodo(event));
+    document.getElementById('add-todo-form').addEventListener('submit', (event) => this.handleFormSubmit(event));
     this.render();
   }
 
@@ -26,18 +28,27 @@ export default class Dom {
     form.classList.toggle('hidden');
   }
 
-  addTodo(event) {
+  handleFormSubmit(event) {
     event.preventDefault();
     const title = document.getElementById('todo-title').value.trim();
     const description = document.getElementById('todo-description').value.trim();
     const dueDate = document.getElementById('todo-dueDate').value;
     const priority = document.getElementById('todo-priority').value;
-    const tagName = this.app.currentProject ? this.app.currentProject.name : 'Default';
+
     if (title && description && dueDate) {
-      this.app.addTodo(title, description, dueDate, priority, tagName);
+      if (this.currentEditTodoId !== null) {
+        // Edit existing todo
+        this.app.editTodo(this.currentEditTodoId, title, description, dueDate, priority);
+        this.currentEditTodoId = null;
+      } else {
+        // Add new todo
+        const tagName = this.app.currentProject ? this.app.currentProject.name : 'Default';
+        this.app.addTodo(title, description, dueDate, priority, tagName);
+      }
+
       this.render();
       this.clearForm();
-      this.toggleFormVisibility(); // Hide form after adding todo
+      this.toggleFormVisibility();
     } else {
       alert('Please fill out all fields.');
     }
@@ -48,6 +59,25 @@ export default class Dom {
     document.getElementById('todo-description').value = '';
     document.getElementById('todo-dueDate').value = '';
     document.getElementById('todo-priority').value = 'Low';
+    this.currentEditTodoId = null;
+  }
+
+  editTodo(todoId) {
+    const todo = this.app.getTodoById(todoId);
+    if (!todo) return;
+
+    document.getElementById('todo-title').value = todo.title;
+    document.getElementById('todo-description').value = todo.description;
+    document.getElementById('todo-dueDate').value = todo.dueDate;
+    document.getElementById('todo-priority').value = todo.priority;
+
+    this.toggleFormVisibility();
+    this.currentEditTodoId = todoId;
+  }
+
+  deleteTodo(todoId) {
+    this.app.deleteTodo(todoId);
+    this.render();
   }
 
   render() {
@@ -91,7 +121,7 @@ export default class Dom {
   renderTodos() {
     const todoList = document.getElementById('todo-list');
     todoList.innerHTML = '';
-    this.app.getCurrentProjectTodos().forEach((todo, index) => {
+    this.app.getCurrentProjectTodos().forEach((todo) => {
       const li = document.createElement('li');
       li.classList.add('todo-item'); // Add todo-item class
       li.id = `todo-${todo.id}`; // Set unique id for each todo
@@ -124,8 +154,28 @@ export default class Dom {
           break;
       }
 
+      // Add Edit Button
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Edit';
+      editButton.classList.add('edit-btn');
+      editButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editTodo(todo.id);
+      });
+      li.appendChild(editButton);
+
+      // Add Delete Button
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.classList.add('delete-btn');
+      deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteTodo(todo.id);
+      });
+      li.appendChild(deleteButton);
+
       li.addEventListener('click', () => {
-        this.app.toggleComplete(index);
+        this.app.toggleComplete(todo.id);
         this.render();
       });
 

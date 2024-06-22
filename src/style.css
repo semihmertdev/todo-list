@@ -167,3 +167,20 @@
     padding-right: 30px;
     padding-left: 30px;
 }
+/* Existing styles */
+
+/* Add styles for edit and delete buttons */
+.edit-btn, .delete-btn {
+  margin-left: 10px;
+  cursor: pointer;
+  border: none;
+  background-color: #ddd;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.edit-btn:hover, .delete-btn:hover {
+  background-color: #ccc;
+}
+
+

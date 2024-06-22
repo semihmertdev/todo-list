@@ -2,39 +2,41 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/index.js', // Ana giriş noktanız
   output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'dist'),
+    filename: 'main.js', // Oluşturulan dosyanın adı
+    path: path.resolve(__dirname, 'dist'), // Çıktı dizini
+    publicPath: '/', // Web sunucusu içindir, genellikle "/"
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.js$/, // JavaScript dosyaları için
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader',
+          loader: 'babel-loader', // Babel kullanarak dönüştür
           options: {
-            presets: ['@babel/preset-env'],
+            presets: ['@babel/preset-env'], // Babel env ön ayarları kullan
           },
         },
       },
       {
-        test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        test: /\.css$/, // CSS dosyaları için
+        use: ['style-loader', 'css-loader'], // Stil loader ve CSS loader kullan
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/index.html',
+      template: './src/index.html', // HTML dosyası için şablon
+      title: 'Todo App', // Başlık ekle (isteğe bağlı)
     }),
   ],
   devServer: {
     static: {
-      directory: path.join(__dirname, 'dist'),
+      directory: path.join(__dirname, 'dist'), // Sunucu için statik dosya dizini
     },
-    open: true,
+    open: true, // Sunucu başlatıldığında tarayıcıda aç
   },
-  mode: 'development',
+  mode: 'development', // Geliştirme modu
 };

@@ -1,5 +1,6 @@
 import Project from './project';
 import Todo from './todo';
+import { format } from 'date-fns';
 
 export default class TodoApp {
   constructor() {
@@ -32,11 +33,12 @@ export default class TodoApp {
   addTodo(title, description, dueDate, priority, tagName) {
     if (!this.currentProject) return;
     if (title && description && dueDate && priority) {
+      const formattedDueDate = format(new Date(dueDate), 'yyyy-MM-dd');
       const todo = new Todo(
         this.todoIdCounter++, 
         title, 
         description, 
-        dueDate, 
+        formattedDueDate, 
         priority,
         tagName // Pass tagName to Todo constructor
       );
@@ -47,9 +49,35 @@ export default class TodoApp {
     }
   }
 
-  toggleComplete(index) {
-    if (!this.currentProject) return;
-    this.currentProject.toggleComplete(index);
+  editTodo(id, title, description, dueDate, priority) {
+    const formattedDueDate = format(new Date(dueDate), 'yyyy-MM-dd');
+    Object.values(this.projects).forEach(project => {
+      const todo = project.todos.find(todo => todo.id === id);
+      if (todo) {
+        todo.title = title;
+        todo.description = description;
+        todo.dueDate = formattedDueDate;
+        todo.priority = priority;
+      }
+    });
+  }
+
+  deleteTodo(id) {
+    Object.values(this.projects).forEach(project => {
+      const index = project.todos.findIndex(todo => todo.id === id);
+      if (index !== -1) {
+        project.todos.splice(index, 1);
+      }
+    });
+  }
+
+  toggleComplete(id) {
+    Object.values(this.projects).forEach(project => {
+      const todo = project.todos.find(todo => todo.id === id);
+      if (todo) {
+        todo.completionStatus = !todo.completionStatus;
+      }
+    });
   }
 
   getCurrentProjectTodos() {
@@ -58,5 +86,13 @@ export default class TodoApp {
 
   getProjects() {
     return Object.keys(this.projects);
+  }
+
+  getTodoById(id) {
+    for (const project of Object.values(this.projects)) {
+      const todo = project.todos.find(todo => todo.id === id);
+      if (todo) return todo;
+    }
+    return null;
   }
 }
