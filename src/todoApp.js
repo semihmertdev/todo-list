@@ -34,9 +34,16 @@ export default class TodoApp {
       this.projects[oldName].name = newName;
       this.projects[newName] = this.projects[oldName];
       delete this.projects[oldName];
+      this.updateTodoProjectName(oldName, newName);
       if (this.currentProject.name === oldName) {
         this.switchProject(newName);
       }
+    }
+  }
+
+  updateTodoProjectName(oldName, newName) {
+    for (const todo of this.projects[newName].todos) {
+      todo.projectName = newName;
     }
   }
 

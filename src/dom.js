@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import TodoApp from './todoApp';
 
 export default class Dom {
@@ -16,6 +17,10 @@ export default class Dom {
     document.getElementById('save-project').addEventListener('click', () => this.saveProject());
     document.getElementById('close-project-modal').addEventListener('click', () => this.hideProjectModal());
     document.getElementById('close-todo-modal').addEventListener('click', () => this.hideTodoModal());
+    document.getElementById('close-confirmation-modal').addEventListener('click', () => this.hideConfirmationModal());
+    document.getElementById('cancel-delete').addEventListener('click', () => this.hideConfirmationModal());
+    document.getElementById('confirm-delete').addEventListener('click', () => this.confirmDelete());
+    this.loadFromLocalStorage();
     this.render();
   }
 
@@ -38,6 +43,7 @@ export default class Dom {
         this.app.addProject(projectName);
       }
       this.hideProjectModal();
+      this.saveToLocalStorage(); // Save to localStorage after modification
       this.render();
     }
   }
@@ -78,9 +84,51 @@ export default class Dom {
         this.app.addTodo(title, description, dueDate, priority);
       }
       this.hideTodoModal();
+      this.saveToLocalStorage(); // Save to localStorage after modification
       this.render();
     } else {
       alert('Please fill out all fields.');
+    }
+  }
+
+  showConfirmationModal(message, onConfirm) {
+    document.getElementById('confirmation-message').textContent = message;
+    document.getElementById('confirmation-modal').style.display = 'block';
+    this.onConfirm = onConfirm;
+  }
+
+  hideConfirmationModal() {
+    document.getElementById('confirmation-modal').style.display = 'none';
+    this.onConfirm = null;
+  }
+
+  confirmDelete() {
+    if (this.onConfirm) {
+      this.onConfirm();
+      this.hideConfirmationModal();
+      this.saveToLocalStorage(); // Save to localStorage after deletion
+      this.render();
+    }
+  }
+
+  saveToLocalStorage() {
+    const data = {
+      projects: this.app.projects,
+      currentProject: this.app.currentProject ? this.app.currentProject.name : null,
+      todoIdCounter: this.app.todoIdCounter
+    };
+    localStorage.setItem('todoAppData', JSON.stringify(data));
+  }
+
+  loadFromLocalStorage() {
+    const data = localStorage.getItem('todoAppData');
+    if (data) {
+      const parsedData = JSON.parse(data);
+      this.app.projects = parsedData.projects;
+      this.app.todoIdCounter = parsedData.todoIdCounter;
+      if (parsedData.currentProject) {
+        this.app.switchProject(parsedData.currentProject);
+      }
     }
   }
 
@@ -104,7 +152,6 @@ export default class Dom {
         this.render();
       });
       projectList.appendChild(defaultLi);
-
     }
 
     // Render other projects
@@ -135,8 +182,11 @@ export default class Dom {
         deleteButton.classList.add('delete-btn');
         deleteButton.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.app.deleteProject(projectName);
-          this.render();
+          this.showConfirmationModal(`Are you sure you want to delete the project "${projectName}"?`, () => {
+            this.app.deleteProject(projectName);
+            this.saveToLocalStorage(); // Save to localStorage after deletion
+            this.render();
+          });
         });
         li.appendChild(deleteButton);
 
@@ -151,7 +201,8 @@ export default class Dom {
     const todos = this.app.getCurrentProjectTodos();
     todos.forEach(todo => {
       const li = document.createElement('li');
-      li.textContent = `${todo.title} - ${todo.description} - ${todo.dueDate} - ${todo.priority} (${todo.projectName})`;
+      const formattedDate = format(new Date(todo.dueDate), 'yyyy-MM-dd');
+      li.textContent = `${todo.title} - ${todo.description} - ${formattedDate} - ${todo.priority} (${todo.projectName})`;
 
       // Edit Button for Todo
       const editButton = document.createElement('button');
@@ -167,8 +218,11 @@ export default class Dom {
       deleteButton.textContent = 'Delete';
       deleteButton.classList.add('delete-btn');
       deleteButton.addEventListener('click', () => {
-        this.app.deleteTodo(todo.id);
-        this.render();
+        this.showConfirmationModal(`Are you sure you want to delete the todo "${todo.title}"?`, () => {
+          this.app.deleteTodo(todo.id);
+          this.saveToLocalStorage(); // Save to localStorage after deletion
+          this.render();
+        });
       });
       li.appendChild(deleteButton);
 
