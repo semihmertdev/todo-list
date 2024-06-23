@@ -10,14 +10,14 @@ export default class Project {
     this.todos.push(todo);
   }
 
-  toggleComplete(id) {
-    const todo = this.todos.find(todo => todo.id === id);
+  toggleComplete(todoId) {
+    const todo = this.todos.find(todo => todo.id === todoId);
     if (todo) {
       todo.completionStatus = !todo.completionStatus;
     }
   }
 
-  deleteTodo(id) {
-    this.todos = this.todos.filter(todo => todo.id !== id);
+  deleteTodo(todoId) {
+    this.todos = this.todos.filter(todo => todo.id !== todoId);
   }
 }

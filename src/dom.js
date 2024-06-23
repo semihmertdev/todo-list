@@ -1,135 +1,110 @@
-import { format } from 'date-fns';
 import TodoApp from './todoApp';
+import { format } from 'date-fns';
 
 export default class Dom {
   constructor() {
     this.app = new TodoApp();
+    this.currentEditTodoId = null;
     this.init();
   }
 
   init() {
-    document.getElementById('add-project').addEventListener('click', () => this.showProjectModal());
-    document.getElementById('show-form-btn').addEventListener('click', () => this.showTodoModal());
-    document.getElementById('todo-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      this.saveTodo();
-    });
-    document.getElementById('save-project').addEventListener('click', () => this.saveProject());
-    document.getElementById('close-project-modal').addEventListener('click', () => this.hideProjectModal());
-    document.getElementById('close-todo-modal').addEventListener('click', () => this.hideTodoModal());
-    document.getElementById('close-confirmation-modal').addEventListener('click', () => this.hideConfirmationModal());
-    document.getElementById('cancel-delete').addEventListener('click', () => this.hideConfirmationModal());
-    document.getElementById('confirm-delete').addEventListener('click', () => this.confirmDelete());
-    this.loadFromLocalStorage();
+    document.getElementById('add-project').addEventListener('click', () => this.addProject());
+    document.getElementById('show-form-btn').addEventListener('click', () => this.toggleFormVisibility());
+    document.getElementById('add-todo-form').addEventListener('submit', (event) => this.handleFormSubmit(event));
     this.render();
   }
 
-  showProjectModal(projectName = '') {
-    document.getElementById('project-name').value = projectName;
-    document.getElementById('project-modal-title').textContent = projectName ? 'Edit Project' : 'Add Project';
-    document.getElementById('project-modal').style.display = 'block';
-  }
-
-  hideProjectModal() {
-    document.getElementById('project-modal').style.display = 'none';
-  }
-
-  saveProject() {
-    const projectName = document.getElementById('project-name').value.trim();
+  addProject() {
+    const projectName = prompt('Enter the new project name:');
     if (projectName) {
-      if (document.getElementById('project-modal-title').textContent === 'Edit Project') {
-        this.app.editProject(this.app.currentProject.name, projectName);
-      } else {
-        this.app.addProject(projectName);
-      }
-      this.hideProjectModal();
-      this.saveToLocalStorage(); // Save to localStorage after modification
+      this.app.addProject(projectName);
       this.render();
     }
   }
 
-  showTodoModal(todo = null) {
-    if (todo) {
-      document.getElementById('todo-title').value = todo.title;
-      document.getElementById('todo-description').value = todo.description;
-      document.getElementById('todo-dueDate').value = todo.dueDate;
-      document.getElementById('todo-priority').value = todo.priority;
-      document.getElementById('todo-modal-title').textContent = 'Edit Todo';
-      document.getElementById('save-todo').setAttribute('data-id', todo.id);
-    } else {
-      document.getElementById('todo-title').value = '';
-      document.getElementById('todo-description').value = '';
-      document.getElementById('todo-dueDate').value = '';
-      document.getElementById('todo-priority').value = 'Low';
-      document.getElementById('todo-modal-title').textContent = 'Add Todo';
-      document.getElementById('save-todo').removeAttribute('data-id');
-    }
-    document.getElementById('todo-modal').style.display = 'block';
+  toggleFormVisibility() {
+    const form = document.getElementById('add-todo-form');
+    form.classList.toggle('hidden');
   }
 
-  hideTodoModal() {
-    document.getElementById('todo-modal').style.display = 'none';
-  }
-
-  saveTodo() {
-    const id = document.getElementById('save-todo').getAttribute('data-id');
+  handleFormSubmit(event) {
+    event.preventDefault();
     const title = document.getElementById('todo-title').value.trim();
     const description = document.getElementById('todo-description').value.trim();
     const dueDate = document.getElementById('todo-dueDate').value;
     const priority = document.getElementById('todo-priority').value;
+
     if (title && description && dueDate) {
-      if (id) {
-        this.app.editTodo(parseInt(id, 10), title, description, dueDate, priority);
+      if (this.currentEditTodoId !== null) {
+        // Edit existing todo
+        const todo = this.app.getTodoById(this.currentEditTodoId);
+        if (todo) {
+          this.app.editTodo(this.currentEditTodoId, title, description, dueDate, priority);
+          this.currentEditTodoId = null;
+        }
       } else {
-        this.app.addTodo(title, description, dueDate, priority);
+        // Add new todo
+        const tagName = this.app.currentProject ? this.app.currentProject.name : 'Default';
+        this.app.addTodo(title, description, dueDate, priority, tagName);
       }
-      this.hideTodoModal();
-      this.saveToLocalStorage(); // Save to localStorage after modification
+
       this.render();
+      this.clearForm();
+      this.toggleFormVisibility();
     } else {
       alert('Please fill out all fields.');
     }
   }
 
-  showConfirmationModal(message, onConfirm) {
-    document.getElementById('confirmation-message').textContent = message;
-    document.getElementById('confirmation-modal').style.display = 'block';
-    this.onConfirm = onConfirm;
+  clearForm() {
+    document.getElementById('todo-title').value = '';
+    document.getElementById('todo-description').value = '';
+    document.getElementById('todo-dueDate').value = '';
+    document.getElementById('todo-priority').value = 'Low';
+    this.currentEditTodoId = null;
   }
 
-  hideConfirmationModal() {
-    document.getElementById('confirmation-modal').style.display = 'none';
-    this.onConfirm = null;
+  editProject(projectName) {
+    const newProjectName = prompt('Enter the new project name:');
+    if (newProjectName) {
+      const oldProjectName = projectName;
+      const todosToUpdate = this.app.editProject(projectName, newProjectName);
+  
+      // Update tagName for todos associated with the project
+      todosToUpdate.forEach(todo => {
+        todo.tagName = newProjectName;
+      });
+  
+      this.render();
+    }
   }
+  
+  
 
-  confirmDelete() {
-    if (this.onConfirm) {
-      this.onConfirm();
-      this.hideConfirmationModal();
-      this.saveToLocalStorage(); // Save to localStorage after deletion
+  deleteProject(projectName) {
+    if (confirm(`Are you sure you want to delete the project "${projectName}"?`)) {
+      this.app.deleteProject(projectName);
       this.render();
     }
   }
 
-  saveToLocalStorage() {
-    const data = {
-      projects: this.app.projects,
-      currentProject: this.app.currentProject ? this.app.currentProject.name : null,
-      todoIdCounter: this.app.todoIdCounter
-    };
-    localStorage.setItem('todoAppData', JSON.stringify(data));
+  editTodo(todoId) {
+    const todo = this.app.getTodoById(todoId);
+    if (!todo) return;
+
+    document.getElementById('todo-title').value = todo.title;
+    document.getElementById('todo-description').value = todo.description;
+    document.getElementById('todo-dueDate').value = todo.dueDate;
+    document.getElementById('todo-priority').value = todo.priority;
+
+    this.toggleFormVisibility();
+    this.currentEditTodoId = todoId;
   }
 
-  loadFromLocalStorage() {
-    const data = localStorage.getItem('todoAppData');
-    if (data) {
-      const parsedData = JSON.parse(data);
-      this.app.projects = parsedData.projects;
-      this.app.todoIdCounter = parsedData.todoIdCounter;
-      if (parsedData.currentProject) {
-        this.app.switchProject(parsedData.currentProject);
-      }
-    }
+  deleteTodo(todoId) {
+    this.app.deleteTodo(todoId);
+    this.render();
   }
 
   render() {
@@ -159,12 +134,8 @@ export default class Dom {
       if (projectName !== 'Default') {
         const li = document.createElement('li');
         li.textContent = projectName;
-        li.classList.add('project-item');
-        li.id = projectName.toLowerCase();
-        li.addEventListener('click', () => {
-          this.app.switchProject(projectName);
-          this.render();
-        });
+        li.classList.add('project-item'); // Add project-item class
+        li.id = projectName.toLowerCase(); // Set id to lowercase project name
 
         // Edit Button for Project
         const editButton = document.createElement('button');
@@ -172,7 +143,7 @@ export default class Dom {
         editButton.classList.add('edit-btn');
         editButton.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.showProjectModal(projectName);
+          this.editProject(projectName);
         });
         li.appendChild(editButton);
 
@@ -182,14 +153,14 @@ export default class Dom {
         deleteButton.classList.add('delete-btn');
         deleteButton.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.showConfirmationModal(`Are you sure you want to delete the project "${projectName}"?`, () => {
-            this.app.deleteProject(projectName);
-            this.saveToLocalStorage(); // Save to localStorage after deletion
-            this.render();
-          });
+          this.deleteProject(projectName);
         });
         li.appendChild(deleteButton);
 
+        li.addEventListener('click', () => {
+          this.app.switchProject(projectName);
+          this.render();
+        });
         projectList.appendChild(li);
       }
     });
@@ -198,18 +169,46 @@ export default class Dom {
   renderTodos() {
     const todoList = document.getElementById('todo-list');
     todoList.innerHTML = '';
-    const todos = this.app.getCurrentProjectTodos();
-    todos.forEach(todo => {
+    this.app.getCurrentProjectTodos().forEach((todo) => {
       const li = document.createElement('li');
-      const formattedDate = format(new Date(todo.dueDate), 'yyyy-MM-dd');
-      li.textContent = `${todo.title} - ${todo.description} - ${formattedDate} - ${todo.priority} (${todo.projectName})`;
+      li.classList.add('todo-item'); // Add todo-item class
+      li.id = `todo-${todo.id}`; // Set unique id for each todo
+
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = `${todo.title} - ${todo.dueDate}`;
+      titleSpan.classList.add('todo-title'); // Add todo-title class
+      li.appendChild(titleSpan);
+
+      const tagSpan = document.createElement('span');
+      tagSpan.textContent = `(${todo.tagName})`; // Display tagName
+      tagSpan.classList.add('tag'); // Add tag class
+      li.appendChild(tagSpan);
+
+      if (todo.completionStatus) {
+        li.classList.add('completed'); // Add completed class for completed todos
+      }
+
+      // Apply priority-based classes
+      switch (todo.priority.toLowerCase()) {
+        case 'high':
+          li.classList.add('priority-high');
+          break;
+        case 'medium':
+          li.classList.add('priority-medium');
+          break;
+        case 'low':
+        default:
+          li.classList.add('priority-low'); // Default to low priority
+          break;
+      }
 
       // Edit Button for Todo
       const editButton = document.createElement('button');
       editButton.textContent = 'Edit';
       editButton.classList.add('edit-btn');
-      editButton.addEventListener('click', () => {
-        this.showTodoModal(todo);
+      editButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editTodo(todo.id);
       });
       li.appendChild(editButton);
 
@@ -217,14 +216,16 @@ export default class Dom {
       const deleteButton = document.createElement('button');
       deleteButton.textContent = 'Delete';
       deleteButton.classList.add('delete-btn');
-      deleteButton.addEventListener('click', () => {
-        this.showConfirmationModal(`Are you sure you want to delete the todo "${todo.title}"?`, () => {
-          this.app.deleteTodo(todo.id);
-          this.saveToLocalStorage(); // Save to localStorage after deletion
-          this.render();
-        });
+      deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteTodo(todo.id);
       });
       li.appendChild(deleteButton);
+
+      li.addEventListener('click', () => {
+        this.app.toggleComplete(todo.id);
+        this.render();
+      });
 
       todoList.appendChild(li);
     });
