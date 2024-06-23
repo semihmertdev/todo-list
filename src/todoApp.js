@@ -30,47 +30,42 @@ export default class TodoApp {
   }
 
   editProject(oldName, newName) {
-    if (this.projects[oldName]) {
-      const project = this.projects[oldName];
+    if (this.projects[oldName] && !this.projects[newName]) {
+      this.projects[oldName].name = newName;
+      this.projects[newName] = this.projects[oldName];
       delete this.projects[oldName];
-      project.name = newName;
-      this.projects[newName] = project;
-      if (this.currentProject === project) {
-        this.currentProject = project;
+      if (this.currentProject.name === oldName) {
+        this.switchProject(newName);
       }
     }
   }
 
   deleteProject(name) {
-    if (this.projects[name]) {
+    if (this.projects[name] && name !== 'Default') {
       delete this.projects[name];
-      if (this.currentProject && this.currentProject.name === name) {
-        this.currentProject = null;
+      if (this.currentProject.name === name) {
+        this.switchProject('Default');
       }
     }
   }
 
-  addTodo(title, description, dueDate, priority, tagName) {
+  addTodo(title, description, dueDate, priority) {
     if (!this.currentProject) return;
     if (title && description && dueDate && priority) {
       const todo = new Todo(
-        this.todoIdCounter++, 
-        title, 
-        description, 
-        dueDate, 
+        this.todoIdCounter++,
+        title,
+        description,
+        dueDate,
         priority,
-        tagName // Pass tagName to Todo constructor
+        this.currentProject.name
       );
-      if (this.currentProject.name !== 'Default') {
-        this.currentProject.addTodo(todo);
-      }
-      this.projects['Default'].addTodo(todo); // Always add to Default
+      this.currentProject.addTodo(todo);
     }
   }
 
-  editTodo(todoId, title, description, dueDate, priority) {
-    if (!this.currentProject) return;
-    const todo = this.getTodoById(todoId);
+  editTodo(id, title, description, dueDate, priority) {
+    const todo = this.findTodoById(id);
     if (todo) {
       todo.title = title;
       todo.description = description;
@@ -79,17 +74,26 @@ export default class TodoApp {
     }
   }
 
-  deleteTodo(todoId) {
-    if (!this.currentProject) return;
-    this.currentProject.deleteTodo(todoId);
+  deleteTodo(id) {
+    for (const projectName in this.projects) {
+      this.projects[projectName].deleteTodo(id);
+    }
   }
 
-  toggleComplete(todoId) {
-    if (!this.currentProject) return;
-    this.currentProject.toggleComplete(todoId);
+  toggleComplete(id) {
+    for (const projectName in this.projects) {
+      const todo = this.projects[projectName].todos.find(todo => todo.id === id);
+      if (todo) {
+        todo.completionStatus = !todo.completionStatus;
+        break;
+      }
+    }
   }
 
   getCurrentProjectTodos() {
+    if (this.currentProject && this.currentProject.name === 'Default') {
+      return Object.values(this.projects).flatMap(project => project.todos);
+    }
     return this.currentProject ? this.currentProject.todos : [];
   }
 
@@ -97,8 +101,11 @@ export default class TodoApp {
     return Object.keys(this.projects);
   }
 
-  getTodoById(todoId) {
-    if (!this.currentProject) return null;
-    return this.currentProject.todos.find(todo => todo.id === todoId);
+  findTodoById(id) {
+    for (const projectName in this.projects) {
+      const todo = this.projects[projectName].todos.find(todo => todo.id === id);
+      if (todo) return todo;
+    }
+    return null;
   }
 }
