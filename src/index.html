@@ -24,23 +24,43 @@
         <button id="show-form-btn">+</button>
       </div>
       <ul id="todo-list"></ul>
-      <form id="add-todo-form" class="hidden">
-        <label for="todo-title">Title:</label><br>
-        <input type="text" id="todo-title" name="todo-title" required><br>
-        <label for="todo-description">Description:</label><br>
-        <textarea id="todo-description" name="todo-description" rows="4" required></textarea><br>
-        <label for="todo-dueDate">Due Date:</label><br>
-        <input type="date" id="todo-dueDate" name="todo-dueDate" required><br>
-        <label for="todo-priority">Priority:</label><br>
-        <select id="todo-priority" name="todo-priority">
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-        </select><br>
-        <button type="submit">Add Todo</button>
-      </form>
     </div>
   </div>
+
+  <!-- Project Dialog -->
+  <dialog id="project-dialog">
+    <form method="dialog">
+      <label for="project-name">Project Name:</label>
+      <input type="text" id="project-name" required>
+      <menu>
+        <button id="cancel-project-btn">Cancel</button>
+        <button id="confirm-project-btn">Confirm</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Todo Dialog -->
+  <dialog id="todo-dialog">
+    <form method="dialog" id="add-todo-form">
+      <label for="todo-title">Title:</label><br>
+      <input type="text" id="todo-title" name="todo-title" required><br>
+      <label for="todo-description">Description:</label><br>
+      <textarea id="todo-description" name="todo-description" rows="4" required></textarea><br>
+      <label for="todo-dueDate">Due Date:</label><br>
+      <input type="date" id="todo-dueDate" name="todo-dueDate" required><br>
+      <label for="todo-priority">Priority:</label><br>
+      <select id="todo-priority" name="todo-priority">
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+      </select><br>
+      <menu>
+        <button id="cancel-todo-btn">Cancel</button>
+        <button id="confirm-todo-btn">Add Todo</button>
+      </menu>
+    </form>
+  </dialog>
+
   <script src="index.js"></script>
 </body>
 </html>
