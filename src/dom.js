@@ -5,6 +5,8 @@ class Dom {
   constructor() {
     this.app = new TodoApp();
     this.currentEditTodoId = null;
+    this.currentEditProjectName = null;
+    this.currentDeleteTodoId = null; // Add this line
     this.init();
   }
 
@@ -15,6 +17,22 @@ class Dom {
     document.getElementById('confirm-todo-btn').addEventListener('click', (event) => this.handleTodoFormSubmit(event));
     document.getElementById('cancel-project-btn').addEventListener('click', () => this.closeProjectDialog());
     document.getElementById('cancel-todo-btn').addEventListener('click', () => this.closeTodoDialog());
+
+    // Edit Project Dialog
+    document.getElementById('confirm-edit-project-btn').addEventListener('click', () => this.handleEditProjectSubmit());
+    document.getElementById('cancel-edit-project-btn').addEventListener('click', () => this.closeEditProjectDialog());
+
+    // Delete Project Dialog
+    document.getElementById('confirm-delete-project-btn').addEventListener('click', () => this.handleDeleteProjectSubmit());
+    document.getElementById('cancel-delete-project-btn').addEventListener('click', () => this.closeDeleteProjectDialog());
+
+    // Delete Todo Dialog
+    document.getElementById('confirm-delete-todo-btn').addEventListener('click', () => this.handleDeleteTodoSubmit());
+    document.getElementById('cancel-delete-todo-btn').addEventListener('click', () => this.closeDeleteTodoDialog());
+
+    // Close Error Dialog
+    document.getElementById('close-error-btn').addEventListener('click', () => this.closeErrorDialog());
+
     this.render();
   }
 
@@ -31,11 +49,15 @@ class Dom {
   handleProjectSubmit() {
     const projectName = document.getElementById('project-name').value.trim();
     if (projectName) {
-      this.app.addProject(projectName);
-      this.render();
-      this.closeProjectDialog();
+      if (this.app.projects.some(project => project.name === projectName)) {
+        this.showErrorDialog('A project with this name already exists.');
+      } else {
+        this.app.addProject(projectName);
+        this.render();
+        this.closeProjectDialog();
+      }
     } else {
-      alert('Please enter a project name.');
+      this.showErrorDialog('Please enter a project name.');
     }
   }
 
@@ -72,7 +94,7 @@ class Dom {
       this.clearForm();
       this.closeTodoDialog();
     } else {
-      alert('Please fill out all fields.');
+      this.showErrorDialog('Please fill out all fields.');
     }
   }
 
@@ -84,30 +106,90 @@ class Dom {
     this.currentEditTodoId = null;
   }
 
-  editProject(projectName) {
-    const newProjectName = prompt('Enter the new project name:');
-    if (newProjectName) {
-      const oldProjectName = projectName;
-      const todosToUpdate = this.app.editProject(projectName, newProjectName);
-  
-      if (todosToUpdate && todosToUpdate.length > 0) {
-        // Update tagName for todos associated with the project
-        todosToUpdate.forEach(todo => {
-          todo.tagName = newProjectName;
-        });
+  showEditProjectDialog(projectName) {
+    const dialog = document.getElementById('edit-project-dialog');
+    document.getElementById('edit-project-name').value = projectName;
+    this.currentEditProjectName = projectName;
+    dialog.showModal();
+  }
+
+  closeEditProjectDialog() {
+    const dialog = document.getElementById('edit-project-dialog');
+    dialog.close();
+  }
+
+  handleEditProjectSubmit() {
+    const newProjectName = document.getElementById('edit-project-name').value.trim();
+    if (newProjectName && this.currentEditProjectName) {
+      if (this.app.projects.some(project => project.name === newProjectName && project.name !== this.currentEditProjectName)) {
+        this.showErrorDialog('A project with this name already exists.');
+      } else {
+        const todosToUpdate = this.app.editProject(this.currentEditProjectName, newProjectName);
+
+        if (todosToUpdate && todosToUpdate.length > 0) {
+          // Update tagName for todos associated with the project
+          todosToUpdate.forEach(todo => {
+            todo.tagName = newProjectName;
+          });
+        }
+
+        this.render();
+        this.currentEditProjectName = null;
+        this.closeEditProjectDialog();
       }
-  
-      this.render();
+    } else {
+      this.showErrorDialog('Please enter a new project name.');
     }
   }
-  
-  
 
-  deleteProject(projectName) {
-    const confirmDelete = confirm('Are you sure you want to delete this project and all its todos?');
-    if (confirmDelete) {
-      this.app.deleteProject(projectName);
+  showDeleteProjectDialog(projectName) {
+    const dialog = document.getElementById('delete-project-dialog');
+    this.currentEditProjectName = projectName;
+    dialog.showModal();
+  }
+
+  closeDeleteProjectDialog() {
+    const dialog = document.getElementById('delete-project-dialog');
+    dialog.close();
+  }
+
+  handleDeleteProjectSubmit() {
+    if (this.currentEditProjectName) {
+      this.app.deleteProject(this.currentEditProjectName);
       this.render();
+      this.currentEditProjectName = null;
+      this.closeDeleteProjectDialog();
+    }
+  }
+
+  showErrorDialog(message) {
+    const dialog = document.getElementById('error-dialog');
+    document.getElementById('error-message').textContent = message;
+    dialog.showModal();
+  }
+
+  closeErrorDialog() {
+    const dialog = document.getElementById('error-dialog');
+    dialog.close();
+  }
+
+  showDeleteTodoDialog(todoId) {
+    const dialog = document.getElementById('delete-todo-dialog');
+    this.currentDeleteTodoId = todoId;
+    dialog.showModal();
+  }
+
+  closeDeleteTodoDialog() {
+    const dialog = document.getElementById('delete-todo-dialog');
+    dialog.close();
+  }
+
+  handleDeleteTodoSubmit() {
+    if (this.currentDeleteTodoId !== null) {
+      this.app.deleteTodo(this.currentDeleteTodoId);
+      this.render();
+      this.currentDeleteTodoId = null;
+      this.closeDeleteTodoDialog();
     }
   }
 
@@ -125,11 +207,7 @@ class Dom {
   }
 
   deleteTodo(todoId) {
-    const confirmDelete = confirm('Are you sure you want to delete this todo?');
-    if (confirmDelete) {
-      this.app.deleteTodo(todoId);
-      this.render();
-    }
+    this.showDeleteTodoDialog(todoId);
   }
 
   toggleTodoComplete(todoId) {
@@ -159,24 +237,26 @@ class Dom {
         this.render();
       });
 
-      const editBtn = document.createElement('button');
-      editBtn.textContent = 'Edit';
-      editBtn.classList.add('edit-btn');
-      editBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        this.editProject(project.name);
-      });
+      if (project.name !== 'Default') {
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.classList.add('edit-btn');
+        editBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          this.showEditProjectDialog(project.name);
+        });
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.classList.add('delete-btn');
-      deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        this.deleteProject(project.name);
-      });
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.classList.add('delete-btn');
+        deleteBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          this.showDeleteProjectDialog(project.name);
+        });
 
-      projectItem.appendChild(editBtn);
-      projectItem.appendChild(deleteBtn);
+        projectItem.appendChild(editBtn);
+        projectItem.appendChild(deleteBtn);
+      }
 
       projectList.appendChild(projectItem);
     });
@@ -206,51 +286,36 @@ class Dom {
 
   createTodoElement(todo) {
     const todoItem = document.createElement('li');
-    todoItem.textContent = todo.title;
     todoItem.classList.add('todo-item');
     if (todo.completed) {
       todoItem.classList.add('completed');
     }
 
-    if (todo.priority === 'High') {
-      todoItem.classList.add('priority-high');
-    } else if (todo.priority === 'Medium') {
-      todoItem.classList.add('priority-medium');
-    } else {
-      todoItem.classList.add('priority-low');
-    }
+    const title = document.createElement('span');
+    title.textContent = `${todo.title} (Priority: ${todo.priority})`;
+    todoItem.appendChild(title);
 
-    todoItem.addEventListener('click', () => this.toggleTodoComplete(todo.id));
-
-    const todoDetails = document.createElement('div');
-    todoDetails.classList.add('todo-details');
-    todoDetails.innerHTML = `
-      <p class="todo-title">${todo.title}</p>
-      <p>${todo.description}</p>
-      <p>Due: ${format(new Date(todo.dueDate), 'MM/dd/yyyy')}</p>
-      <p class="tag">${todo.tagName}</p>
-    `;
-
-    todoItem.appendChild(todoDetails);
+    const dueDate = document.createElement('span');
+    dueDate.textContent = `Due: ${format(new Date(todo.dueDate), 'yyyy-MM-dd')}`;
+    todoItem.appendChild(dueDate);
 
     const editBtn = document.createElement('button');
     editBtn.textContent = 'Edit';
     editBtn.classList.add('edit-btn');
-    editBtn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.editTodo(todo.id);
-    });
+    editBtn.addEventListener('click', () => this.editTodo(todo.id));
+    todoItem.appendChild(editBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
     deleteBtn.classList.add('delete-btn');
-    deleteBtn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.deleteTodo(todo.id);
-    });
-
-    todoItem.appendChild(editBtn);
+    deleteBtn.addEventListener('click', () => this.deleteTodo(todo.id));
     todoItem.appendChild(deleteBtn);
+
+    const completeBtn = document.createElement('button');
+    completeBtn.textContent = todo.completed ? 'Unmark Complete' : 'Mark Complete';
+    completeBtn.classList.add('complete-btn');
+    completeBtn.addEventListener('click', () => this.toggleTodoComplete(todo.id));
+    todoItem.appendChild(completeBtn);
 
     return todoItem;
   }

@@ -1,83 +1,131 @@
-  class TodoApp {
-    constructor() {
-      this.projects = [];
-      this.currentProject = null;
-      this.loadDefaultProject();
-    }
+class TodoApp {
+  constructor() {
+    this.projects = [];
+    this.currentProject = null;
+    this.loadProjects();
+  }
 
-    loadDefaultProject() {
-      const defaultProject = { name: 'Default', todos: [] };
-      this.projects.push(defaultProject);
-      this.currentProject = defaultProject;
+  loadProjects() {
+    const savedProjects = JSON.parse(localStorage.getItem('projects'));
+    if (savedProjects && savedProjects.length > 0) {
+      this.projects = savedProjects;
+      this.currentProject = this.projects[0];
+    } else {
+      this.initDefaultProject();
     }
+  }
 
-    addProject(name) {
-      const project = { name, todos: [] };
-      this.projects.push(project);
-      this.currentProject = project;
+  saveProjects() {
+    localStorage.setItem('projects', JSON.stringify(this.projects));
+  }
+
+  initDefaultProject() {
+    const defaultProject = this.addProject('Default');
+    this.setCurrentProject(defaultProject.name);
+  }
+
+  addProject(name) {
+    const project = {
+      name,
+      todos: []
+    };
+    this.projects.push(project);
+    this.saveProjects();
+    return project;
+  }
+
+  editProject(oldName, newName) {
+    if (oldName === 'Default') {
+      alert('The Default project cannot be edited.');
+      return;
     }
-
-    setCurrentProject(name) {
-      this.currentProject = this.projects.find(project => project.name === name);
+    const project = this.projects.find(proj => proj.name === oldName);
+    if (project) {
+      project.name = newName;
+      this.saveProjects();
+      return project.todos;
     }
+    return [];
+  }
 
-    editProject(oldName, newName) {
-      const projectIndex = this.projects.findIndex(project => project.name === oldName);
-      if (projectIndex !== -1) {
-        const project = this.projects[projectIndex];
-        project.name = newName;
-        this.projects[projectIndex] = project;
-    
-        // Return todos associated with the project
-        return project.todos;
-      }
-      return []; // Return an empty array if project not found
+  deleteProject(name) {
+    if (name === 'Default') {
+      alert('The Default project cannot be deleted.');
+      return;
     }
-    
-    
-
-    deleteProject(name) {
-      this.projects = this.projects.filter(project => project.name !== name);
-      if (this.currentProject.name === name) {
-        this.currentProject = this.projects.length ? this.projects[0] : null;
-      }
+    this.projects = this.projects.filter(proj => proj.name !== name);
+    if (this.currentProject.name === name) {
+      this.currentProject = this.projects[0] || null;
     }
+    this.saveProjects();
+  }
 
-    addTodo(title, description, dueDate, priority, tagName) {
-      const todo = { id: Date.now(), title, description, dueDate, priority, tagName, completed: false };
-      this.currentProject.todos.push(todo);
+  setCurrentProject(name) {
+    this.currentProject = this.projects.find(proj => proj.name === name) || null;
+  }
+
+  addTodo(title, description, dueDate, priority, tagName) {
+    const project = this.projects.find(proj => proj.name === tagName);
+    if (project) {
+      const todo = {
+        id: Date.now(),
+        title,
+        description,
+        dueDate,
+        priority,
+        completed: false,
+        tagName
+      };
+      project.todos.push(todo);
+      this.saveProjects();
     }
+  }
 
-    editTodo(id, title, description, dueDate, priority) {
-      const todo = this.getTodoById(id);
+  editTodo(id, title, description, dueDate, priority) {
+    this.projects.forEach(project => {
+      const todo = project.todos.find(todo => todo.id === id);
       if (todo) {
         todo.title = title;
         todo.description = description;
         todo.dueDate = dueDate;
         todo.priority = priority;
+        this.saveProjects();
       }
-    }
-
-    deleteTodo(id) {
-      this.currentProject.todos = this.currentProject.todos.filter(todo => todo.id !== id);
-    }
-
-    toggleTodoComplete(id) {
-      const todo = this.getTodoById(id);
-      if (todo) {
-        todo.completed = !todo.completed;
-      }
-    }
-
-    getTodoById(id) {
-      return this.currentProject.todos.find(todo => todo.id === id);
-    }
-
-    getAllTodos() {
-      return this.projects.reduce((allTodos, project) => {
-        return allTodos.concat(project.todos);
-      }, []);
-    }
+    });
   }
 
-  export default TodoApp;
+  deleteTodo(id) {
+    this.projects.forEach(project => {
+      project.todos = project.todos.filter(todo => todo.id !== id);
+    });
+    this.saveProjects();
+  }
+
+  toggleTodoComplete(id) {
+    this.projects.forEach(project => {
+      const todo = project.todos.find(todo => todo.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        this.saveProjects();
+      }
+    });
+  }
+
+  getTodoById(id) {
+    for (const project of this.projects) {
+      const todo = project.todos.find(todo => todo.id === id);
+      if (todo) {
+        return todo;
+      }
+    }
+    return null;
+  }
+
+  getAllTodos() {
+    return this.projects.reduce((allTodos, project) => {
+      return allTodos.concat(project.todos);
+    }, []);
+  }
+}
+
+export default TodoApp;
