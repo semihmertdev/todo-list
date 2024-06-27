@@ -6,7 +6,7 @@ class Dom {
     this.app = new TodoApp();
     this.currentEditTodoId = null;
     this.currentEditProjectName = null;
-    this.currentDeleteTodoId = null; // Add this line
+    this.currentDeleteTodoId = null;
     this.init();
   }
 
@@ -125,14 +125,13 @@ class Dom {
         this.showErrorDialog('A project with this name already exists.');
       } else {
         const todosToUpdate = this.app.editProject(this.currentEditProjectName, newProjectName);
-
+  
         if (todosToUpdate && todosToUpdate.length > 0) {
-          // Update tagName for todos associated with the project
           todosToUpdate.forEach(todo => {
             todo.tagName = newProjectName;
           });
         }
-
+  
         this.render();
         this.currentEditProjectName = null;
         this.closeEditProjectDialog();
@@ -141,6 +140,8 @@ class Dom {
       this.showErrorDialog('Please enter a new project name.');
     }
   }
+  
+  
 
   showDeleteProjectDialog(projectName) {
     const dialog = document.getElementById('delete-project-dialog');
@@ -198,7 +199,7 @@ class Dom {
     if (todo) {
       document.getElementById('todo-title').value = todo.title;
       document.getElementById('todo-description').value = todo.description;
-      document.getElementById('todo-dueDate').value = format(new Date(todo.dueDate), 'yyyy-MM-dd');
+      document.getElementById('todo-dueDate').value = format(new Date(todo.dueDate), 'dd-MM-yyyy');
       document.getElementById('todo-priority').value = todo.priority;
 
       this.currentEditTodoId = todoId;
@@ -223,7 +224,7 @@ class Dom {
   renderProjectList() {
     const projectList = document.getElementById('project-list');
     projectList.innerHTML = '';
-
+  
     this.app.projects.forEach((project) => {
       const projectItem = document.createElement('li');
       projectItem.textContent = project.name;
@@ -231,33 +232,38 @@ class Dom {
       if (this.app.currentProject && this.app.currentProject.name === project.name) {
         projectItem.classList.add('active');
       }
-
+  
       projectItem.addEventListener('click', () => {
         this.app.setCurrentProject(project.name);
         this.render();
       });
-
+  
       if (project.name !== 'Default') {
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.classList.add('project-buttons');
+  
         const editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        editBtn.classList.add('edit-btn');
+        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.classList.add('edit-btn', 'icon-btn');
         editBtn.addEventListener('click', (event) => {
           event.stopPropagation();
           this.showEditProjectDialog(project.name);
         });
-
+  
         const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.classList.add('delete-btn');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.classList.add('delete-btn', 'icon-btn');
         deleteBtn.addEventListener('click', (event) => {
           event.stopPropagation();
           this.showDeleteProjectDialog(project.name);
         });
-
-        projectItem.appendChild(editBtn);
-        projectItem.appendChild(deleteBtn);
+  
+        buttonsDiv.appendChild(editBtn);
+        buttonsDiv.appendChild(deleteBtn);
+  
+        projectItem.appendChild(buttonsDiv);
       }
-
+  
       projectList.appendChild(projectItem);
     });
   }
@@ -267,7 +273,6 @@ class Dom {
     todoList.innerHTML = '';
 
     if (this.app.currentProject && this.app.currentProject.name === 'Default') {
-      // Render todos from all projects for the default project
       this.app.projects.forEach((project) => {
         project.todos.forEach((todo) => {
           const todoItem = this.createTodoElement(todo);
@@ -275,7 +280,6 @@ class Dom {
         });
       });
     } else {
-      // Render todos from the current project only for other projects
       const todos = this.app.currentProject ? this.app.currentProject.todos : [];
       todos.forEach((todo) => {
         const todoItem = this.createTodoElement(todo);
@@ -290,33 +294,83 @@ class Dom {
     if (todo.completed) {
       todoItem.classList.add('completed');
     }
-
+  
+    let priorityClass = '';
+    switch (todo.priority.toLowerCase()) {
+      case 'low':
+        priorityClass = 'priority-low';
+        break;
+      case 'medium':
+        priorityClass = 'priority-medium';
+        break;
+      case 'high':
+        priorityClass = 'priority-high';
+        break;
+      default:
+        priorityClass = 'priority-default';
+        break;
+    }
+  
+    todoItem.classList.add(priorityClass);
+  
+    const completeDiv = document.createElement('div');
+    completeDiv.classList.add('complete-btn');
+  
+    const completeIcon = document.createElement('button');
+    completeIcon.innerHTML = todo.completed ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>';
+    completeIcon.classList.add('icon-btn');
+    completeIcon.addEventListener('click', () => this.toggleTodoComplete(todo.id));
+  
+    completeDiv.appendChild(completeIcon);
+    todoItem.appendChild(completeDiv);
+  
+    const todoContent = document.createElement('div');
+    todoContent.classList.add('todo-content');
+  
     const title = document.createElement('span');
-    title.textContent = `${todo.title} (Priority: ${todo.priority})`;
-    todoItem.appendChild(title);
-
+    title.textContent = todo.title;
+    title.classList.add('todo-title');
+    todoContent.appendChild(title);
+  
+    const description = document.createElement('span');
+    description.textContent = todo.description;
+    description.classList.add('todo-description');
+    todoContent.appendChild(description);
+  
+    todoItem.appendChild(todoContent);
+  
     const dueDate = document.createElement('span');
-    dueDate.textContent = `Due: ${format(new Date(todo.dueDate), 'yyyy-MM-dd')}`;
+    dueDate.textContent = `${format(new Date(todo.dueDate), 'dd/MM/yyyy')}`;
+    dueDate.classList.add('todo-due-date');
     todoItem.appendChild(dueDate);
-
+  
+    const projectTagDiv = document.createElement('div');
+    projectTagDiv.classList.add('todo-tag');
+  
+    const projectTag = document.createElement('span');
+    projectTag.textContent = `#${todo.tagName}`;
+    projectTagDiv.appendChild(projectTag);
+  
+    todoItem.appendChild(projectTagDiv);
+  
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.classList.add('todo-buttons');
+  
     const editBtn = document.createElement('button');
-    editBtn.textContent = 'Edit';
-    editBtn.classList.add('edit-btn');
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    editBtn.classList.add('edit-btn', 'icon-btn');
     editBtn.addEventListener('click', () => this.editTodo(todo.id));
-    todoItem.appendChild(editBtn);
-
+  
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Delete';
-    deleteBtn.classList.add('delete-btn');
+    deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    deleteBtn.classList.add('delete-btn', 'icon-btn');
     deleteBtn.addEventListener('click', () => this.deleteTodo(todo.id));
-    todoItem.appendChild(deleteBtn);
-
-    const completeBtn = document.createElement('button');
-    completeBtn.textContent = todo.completed ? 'Unmark Complete' : 'Mark Complete';
-    completeBtn.classList.add('complete-btn');
-    completeBtn.addEventListener('click', () => this.toggleTodoComplete(todo.id));
-    todoItem.appendChild(completeBtn);
-
+  
+    buttonsDiv.appendChild(editBtn);
+    buttonsDiv.appendChild(deleteBtn);
+  
+    todoItem.appendChild(buttonsDiv);
+  
     return todoItem;
   }
 }
