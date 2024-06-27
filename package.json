@@ -10,7 +10,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
     "@babel/core": "^7.24.7",
     "@babel/preset-env": "^7.24.7",
@@ -29,5 +28,6 @@
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@mdi/font": "^7.4.47",
     "date-fns": "^3.6.0"
-  }
+  },
+  "description": ""
 }
