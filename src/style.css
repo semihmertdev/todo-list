@@ -1,7 +1,6 @@
 @font-face {
   font-family: 'Kanit';
-  src: url('fonts/Kanit-Regular.ttf') format('truetype');  /* Font dosyanızın yolunu ve formatını belirtin */
-  /* Diğer formatlar için gerekirse ekleyebilirsiniz */
+  src: url('fonts/Kanit-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
